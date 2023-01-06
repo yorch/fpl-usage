@@ -1,21 +1,18 @@
 import got from 'got';
+import { config } from './config.js';
 import { getAuthInfo } from './get-auth-info.js';
-
-const BASE_URL = 'https://www.fpl.com/';
-
-const buildUrl = (endpoint) => {
-  try {
-    return new URL(endpoint, BASE_URL).href;
-  } catch (error) {
-    // TODO: Handle error
-    return '';
-  }
-};
+import { buildUrl } from './utils/build-url.js';
 
 export const getData = async (endpoint, method = 'GET', jsonBody) => {
   const authInfo = await getAuthInfo();
 
-  return got(buildUrl(endpoint), {
+  const url = buildUrl(config.baseUrl, endpoint);
+
+  if (!url) {
+    throw new Error('Could not obtained data as URL is not valid');
+  }
+
+  return got(url, {
     method,
     json: jsonBody,
     headers: {

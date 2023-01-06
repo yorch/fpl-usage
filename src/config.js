@@ -15,6 +15,7 @@ export const config = {
       .default(60 * 3)
       .asInt(),
   },
+  baseUrl: env.get('BASE_URL').default('https://www.fpl.com/').asString(),
   dataDirectory: env.get('DATA_DIR').default('data').asString(),
   nodeEnv,
   isProduction: nodeEnv === 'PRODUCTION',
