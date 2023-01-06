@@ -3,23 +3,23 @@ import { getData } from './get-data.js';
 import { loadJsonFile } from './utils/load-json-file.js';
 import { saveJsonFile } from './utils/save-json-file.js';
 
-const CACHE_FILENAME = '_customer';
+const CACHE_FILENAME = '_account';
 
-export const getCustomerInfo = async () => {
-  const cachedCustomerInfo = await loadJsonFile(
+export const getAccountInfo = async () => {
+  const cachedAccountInfo = await loadJsonFile(
     config.dataDirectory,
     CACHE_FILENAME
   );
 
-  if (cachedCustomerInfo && cachedCustomerInfo._expires > Date.now()) {
-    return cachedCustomerInfo;
+  if (cachedAccountInfo && cachedAccountInfo._expires > Date.now()) {
+    return cachedAccountInfo;
   }
 
-  const url = `/cs/customer/v1/resources/header?_=${Date.now()}`;
+  const endpoint = `/cs/customer/v1/resources/header?_=${Date.now()}`;
 
-  const { data } = await getData(url);
+  const { data } = await getData(endpoint);
 
-  const customerInfo = {
+  const accountInfo = {
     _created: Date.now(),
     _expires: Date.now() + config.auth.ttl_secs * 1000,
     data,
@@ -32,7 +32,7 @@ export const getCustomerInfo = async () => {
     statusName: data?.selectedAccount?.data?.statusName,
   };
 
-  await saveJsonFile(config.dataDirectory, CACHE_FILENAME, customerInfo);
+  await saveJsonFile(config.dataDirectory, CACHE_FILENAME, accountInfo);
 
-  return customerInfo;
+  return accountInfo;
 };

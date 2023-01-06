@@ -1,4 +1,4 @@
-import { getCustomerInfo } from './get-customer-info.js';
+import { getAccountInfo } from './get-account-info.js';
 import { getData } from './get-data.js';
 
 const commonAttrs = {
@@ -78,7 +78,7 @@ const getUsageData = async (getJsonBody) => {
     premiseNumber,
     revCode,
     status,
-  } = await getCustomerInfo();
+  } = await getAccountInfo();
 
   return getData(
     `/dashboard-api/resources/account/${accountNumber}/energyService/${accountNumber}`,
