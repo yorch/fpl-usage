@@ -7,6 +7,9 @@
   "type": "module",
   "private": true,
   "dependencies": {
-    "got": "12.5.3"
+    "dotenv": "16.0.3",
+    "env-var": "7.3.0",
+    "got": "12.5.3",
+    "pino": "8.8.0"
   }
 }
