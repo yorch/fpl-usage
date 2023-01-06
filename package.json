@@ -1,0 +1,12 @@
+{
+  "name": "fpl-home-usage",
+  "version": "1.0.0",
+  "main": "src/index.js",
+  "author": "Jorge Barnaby <jorge.barnaby@gmail.com>",
+  "license": "MIT",
+  "type": "module",
+  "private": true,
+  "dependencies": {
+    "got": "12.5.3"
+  }
+}
