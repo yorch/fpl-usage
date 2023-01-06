@@ -1,8 +1,20 @@
 import got from 'got';
-import { base64 } from './base64.js';
+import { config } from './config.js';
+import { base64 } from './utils/base64.js';
+import { loadJsonFile } from './utils/load-json-file.js';
+import { saveJsonFile } from './utils/save-json-file.js';
 
-const getLoginUrl = () =>
-  `https://www.fpl.com/cs/customer/v1/registration/loginAndUseMigration?view=LoginMini&_=${Date.now()}`;
+const CACHE_FILENAME_PREFIX = '_auth';
+
+const loadAuthInfo = (username) =>
+  loadJsonFile(config.dataDirectory, `${CACHE_FILENAME_PREFIX}_${username}`);
+
+const saveAuthInfo = (username, authInfo) =>
+  saveJsonFile(
+    config.dataDirectory,
+    `${CACHE_FILENAME_PREFIX}_${username}`,
+    authInfo
+  );
 
 // Logic obtained from: https://www.fpl.com/app/framework/dojo/dojo/dojo.js.uncompressed.js
 const getAuthHeader = (username, password) => {
@@ -18,8 +30,18 @@ const getAuthHeader = (username, password) => {
   };
 };
 
-export const getAuthInfo = async (username, password) => {
-  const { headers } = await got(getLoginUrl(), {
+export const getAuthInfo = async () => {
+  const { username, password } = config.auth;
+
+  const cachedAuthInfo = await loadAuthInfo(username);
+
+  if (cachedAuthInfo && cachedAuthInfo._expires > Date.now()) {
+    return cachedAuthInfo;
+  }
+
+  const url = `https://www.fpl.com/cs/customer/v1/registration/loginAndUseMigration?view=LoginMini&_=${Date.now()}`;
+
+  const { headers } = await got(url, {
     headers: {
       ...getAuthHeader(username, password),
       cookie: 'localUser=',
@@ -37,5 +59,17 @@ export const getAuthInfo = async (username, password) => {
 
   const { jwttoken, ltpatoken2 } = headers;
 
-  return { cookiesArray, rawCookies, jwttoken, ltpatoken2 };
+  const authInfo = {
+    _created: Date.now(),
+    _username: username,
+    _expires: Date.now() + config.auth.ttl_secs * 1000,
+    cookiesArray,
+    rawCookies,
+    jwttoken,
+    ltpatoken2,
+  };
+
+  await saveAuthInfo(username, authInfo);
+
+  return authInfo;
 };
