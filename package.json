@@ -7,9 +7,12 @@
   "type": "module",
   "private": true,
   "dependencies": {
+    "dayjs": "1.11.7",
     "dotenv": "16.0.3",
     "env-var": "7.3.0",
     "got": "12.5.3",
-    "pino": "8.8.0"
+    "p-map": "5.5.0",
+    "pino": "8.8.0",
+    "pino-pretty": "9.1.1"
   }
 }
