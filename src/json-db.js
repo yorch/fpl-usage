@@ -1,17 +1,14 @@
-import { join, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { Low } from 'lowdb';
-import lodash from 'lodash';
 import { JSONFile } from 'lowdb/node';
+import lodash from 'lodash';
 import { config } from './config.js';
 import { createLogger } from './logger.js';
+import { buildFilePath } from './utils/build-file-path.js';
 
 const logger = createLogger('json-db');
 
 const initJsonDb = async () => {
-  // File path
-  const __dirname = dirname(fileURLToPath(import.meta.url));
-  const file = join(__dirname, config.jsonDbFile);
+  const file = buildFilePath(config.dataDirectory, config.jsonDbFile);
 
   // Configure lowdb to write to JSONFile
   const adapter = new JSONFile(file);
@@ -62,6 +59,8 @@ const saveUsageRecord = async (type, record) => {
   jsonDb.data[type].records.push(record);
 
   await jsonDb.write();
+
+  logger.info({ id }, `Saved ${type} record`);
 };
 
 export const saveHourlyUsage = async (record) =>
