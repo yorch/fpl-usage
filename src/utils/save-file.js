@@ -1,4 +1,4 @@
-import fs from 'fs';
+import fs from 'node:fs';
 import { buildFilePath } from './build-file-path.js';
 
 export const saveFile = (dataDirectory, filename, content) =>
