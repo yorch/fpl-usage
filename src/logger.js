@@ -14,7 +14,10 @@ const opts = isProduction
       },
     };
 
-export const logger = pino(opts);
+export const logger = pino({
+  level: config.logLevel,
+  ...opts,
+});
 
 export const createLogger = (module, params = {}) =>
   logger.child({ ...params, ...(module ? { module } : {}) });
