@@ -92,14 +92,43 @@ const getUsageData = async (getJsonBody) => {
   );
 };
 
-export const getHourlyUsageData = async (startDate) =>
-  getUsageData(getHourlyRequestBody(startDate));
+export const getHourlyUsageData = async (startDate) => {
+  const { data } = await getUsageData(getHourlyRequestBody(startDate));
 
-export const getDailyUsageData = async (startDate, endDate) =>
-  getUsageData(getDailyRequestBody(startDate, endDate));
+  return {
+    records: data?.HourlyUsage?.data?.map((record) => ({
+      _id: record.readTime,
+      ...record,
+    })),
+  };
+};
 
-export const getMonthlyUsageData = async () =>
-  getUsageData(getMonthlyRequestBody());
+export const getDailyUsageData = async (startDate, endDate) => {
+  const { data } = await getUsageData(getDailyRequestBody(startDate, endDate));
+
+  return {
+    records: data?.DailyUsage?.data?.map((record) => ({
+      _id: record.readTime,
+      ...record,
+    })),
+  };
+};
+
+export const getMonthlyUsageData = async () => {
+  const { data } = await getUsageData(getMonthlyRequestBody());
+
+  const {
+    avgBillingCharge,
+    avgBilledKwh,
+    data: records,
+  } = data?.MonthlyUsage || {};
+
+  return {
+    avgBillingCharge,
+    avgBilledKwh,
+    records: records?.map((record) => ({ _id: record.billEndDate, ...record })),
+  };
+};
 
 export const getHourlyUsageDataForRange = async (startDate, endDate) => {
   if (startDate > endDate) {
@@ -112,10 +141,12 @@ export const getHourlyUsageDataForRange = async (startDate, endDate) => {
   const duration = endDayJS.diff(startDayJS, 'day');
 
   logger.info(
-    { days: duration, startDate, endDate },
-    `Will obtain hourly usage for ${duration} days, from ${startDayJS.format(
-      'YYYY-MM-DD'
-    )} to ${endDayJS.format('YYYY-MM-DD')}`
+    {
+      days: duration,
+      startDate: startDayJS.format('YYYY-MM-DD'),
+      endDate: endDayJS.format('YYYY-MM-DD'),
+    },
+    'Will obtain hourly usage'
   );
 
   const resultArray = await pMap(
@@ -125,22 +156,21 @@ export const getHourlyUsageDataForRange = async (startDate, endDate) => {
       const formattedDate = date.format('YYYY-MM-DD');
       const requestStartTime = Date.now();
 
-      logger.info({ formattedDate }, 'Obtaining hourly usage');
+      logger.info({ date: formattedDate }, 'Obtaining hourly usage');
 
-      const { data } = await getHourlyUsageData(date);
+      const { records: usageData } = await getHourlyUsageData(date);
       const requestDurationMs = Date.now() - requestStartTime;
-      const usageData = data?.HourlyUsage?.data;
 
       if (!usageData) {
         logger.warn(
-          { formattedDate, requestDurationMs },
+          { date: formattedDate, requestDurationMs },
           'Hourly usage could not be obtained'
         );
         return [];
       }
 
       logger.info(
-        { formattedDate, records: usageData.length, requestDurationMs },
+        { date: formattedDate, records: usageData.length, requestDurationMs },
         'Successfully obtained hourly usage'
       );
 
@@ -149,5 +179,5 @@ export const getHourlyUsageDataForRange = async (startDate, endDate) => {
     { concurrency: 3 }
   );
 
-  return [].concat(...resultArray);
+  return { records: [].concat(...resultArray) };
 };
