@@ -1,11 +1,14 @@
+import dayjs from 'dayjs';
+import pMap from 'p-map';
 import { getAccountInfo } from './get-account-info.js';
 import { getData } from './get-data.js';
+import { logger } from './logger.js';
+import { buildStringDate } from './utils/build-string-date.js';
 
 const commonAttrs = {
   amrFlag: 'Y',
   applicationPage: 'resDashBoard',
   channel: 'WEB',
-  //   lastBilledDate: '',
 };
 
 /**
@@ -24,10 +27,11 @@ const getHourlyRequestBody =
     frequencyType: 'Hourly',
     meterNo,
     monthlyFlag: false,
-    premiseNumber: `${premiseNumber}`,
+    premiseNumber,
     projectedBillFlag: false,
     revCode,
-    startDate,
+    startDate:
+      typeof startDate === 'string' ? startDate : buildStringDate(startDate),
     status,
   });
 
@@ -45,14 +49,15 @@ const getDailyRequestBody =
     ...commonAttrs,
     accountType,
     bbEnrollmentStatus: 'NOTENROLLED',
-    endDate,
+    endDate: typeof endDate === 'string' ? endDate : buildStringDate(endDate),
     frequencyType: 'Daily',
     meterNo,
     monthlyFlag: false,
-    premiseNumber: `${premiseNumber}`,
+    premiseNumber,
     projectedBillFlag: false,
     revCode,
-    startDate,
+    startDate:
+      typeof startDate === 'string' ? startDate : buildStringDate(startDate),
     status,
   });
 
@@ -62,7 +67,7 @@ const getMonthlyRequestBody =
     accountType,
     meterNo,
     monthlyFlag: true,
-    premiseNumber: `${premiseNumber}`,
+    premiseNumber,
     projectedBillFlag: true,
     // I think 48 months is the max data that FPL stores
     recordCount: 48,
@@ -87,10 +92,62 @@ const getUsageData = async (getJsonBody) => {
   );
 };
 
-export const getHourlyUsageData = (startDate) =>
+export const getHourlyUsageData = async (startDate) =>
   getUsageData(getHourlyRequestBody(startDate));
 
-export const getDailyUsageData = (startDate, endDate) =>
+export const getDailyUsageData = async (startDate, endDate) =>
   getUsageData(getDailyRequestBody(startDate, endDate));
 
-export const getMonthlyUsageData = () => getUsageData(getMonthlyRequestBody());
+export const getMonthlyUsageData = async () =>
+  getUsageData(getMonthlyRequestBody());
+
+export const getHourlyUsageDataForRange = async (startDate, endDate) => {
+  if (startDate > endDate) {
+    throw new Error('Start date must be less or equal than end date');
+  }
+
+  const startDayJS = dayjs(startDate);
+  const endDayJS = dayjs(endDate);
+
+  const duration = endDayJS.diff(startDayJS, 'day');
+
+  logger.info(
+    { days: duration, startDate, endDate },
+    `Will obtain hourly usage for ${duration} days, from ${startDayJS.format(
+      'YYYY-MM-DD'
+    )} to ${endDayJS.format('YYYY-MM-DD')}`
+  );
+
+  const resultArray = await pMap(
+    [...Array(duration)],
+    async (_, index) => {
+      const date = startDayJS.add(index, 'day');
+      const formattedDate = date.format('YYYY-MM-DD');
+      const requestStartTime = Date.now();
+
+      logger.info({ formattedDate }, 'Obtaining hourly usage');
+
+      const { data } = await getHourlyUsageData(date);
+      const requestDurationMs = Date.now() - requestStartTime;
+      const usageData = data?.HourlyUsage?.data;
+
+      if (!usageData) {
+        logger.warn(
+          { formattedDate, requestDurationMs },
+          'Hourly usage could not be obtained'
+        );
+        return [];
+      }
+
+      logger.info(
+        { formattedDate, records: usageData.length, requestDurationMs },
+        'Successfully obtained hourly usage'
+      );
+
+      return usageData;
+    },
+    { concurrency: 3 }
+  );
+
+  return [].concat(...resultArray);
+};
