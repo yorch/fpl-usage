@@ -17,6 +17,7 @@ export const config = {
   },
   baseUrl: env.get('BASE_URL').default('https://www.fpl.com/').asString(),
   dataDirectory: env.get('DATA_DIR').default('data').asString(),
+  jsonDbFile: env.get('JSON_DB_FILE').default('db.json').asString(),
   nodeEnv,
   isProduction: nodeEnv === 'PRODUCTION',
 };
