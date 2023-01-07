@@ -41,19 +41,21 @@ const initJsonDb = async () => {
 
 const jsonDb = await initJsonDb();
 
-const saveUsageRecord = async (type, id, record) => {
+const saveUsageRecord = async (type, record) => {
   if (!jsonDb.data[type]) {
     throw new Error(`Usage type ${type} is not valid`);
   }
 
+  const { _id } = record;
+
   // value() must be called to execute chain
   const existingRecord = jsonDb.chain
     .get([type, 'records'])
-    .find({ _id: id })
+    .find({ _id })
     .value();
 
   if (existingRecord) {
-    logger.debug({ id }, `${type} record already exists`);
+    logger.debug({ id: _id }, `${type} record already exists`);
     return;
   }
 
@@ -62,11 +64,11 @@ const saveUsageRecord = async (type, id, record) => {
   await jsonDb.write();
 };
 
-export const saveHourlyUsage = async (id, record) =>
-  saveUsageRecord('hourlyUsage', id, record);
+export const saveHourlyUsage = async (record) =>
+  saveUsageRecord('hourlyUsage', record);
 
-export const saveDailyUsage = async (id, record) =>
-  saveUsageRecord('dailyUsage', id, record);
+export const saveDailyUsage = async (record) =>
+  saveUsageRecord('dailyUsage', record);
 
-export const saveMonthlyUsage = async (id, record) =>
-  saveUsageRecord('monthlyUsage', id, record);
+export const saveMonthlyUsage = async (record) =>
+  saveUsageRecord('monthlyUsage', record);
