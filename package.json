@@ -6,6 +6,9 @@
   "license": "MIT",
   "type": "module",
   "private": true,
+  "scripts": {
+    "start": "node ."
+  },
   "dependencies": {
     "dayjs": "1.11.7",
     "dotenv": "16.0.3",
