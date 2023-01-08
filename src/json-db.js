@@ -38,6 +38,27 @@ const initJsonDb = async () => {
 
 const jsonDb = await initJsonDb();
 
+const saveUsage = async (type, prop, content) => {
+  if (!jsonDb.data[type]) {
+    throw new Error(`Usage type ${type} is not valid`);
+  }
+
+  jsonDb.data[type][prop] = content;
+
+  await jsonDb.write();
+
+  logger.info({ type, prop }, `Saved ${type} usage`);
+};
+
+export const saveHourlyUsage = async (prop, content) =>
+  saveUsage('hourlyUsage', prop, content);
+
+export const saveDailyUsage = async (prop, content) =>
+  saveUsage('dailyUsage', prop, content);
+
+export const saveMonthlyUsage = async (prop, content) =>
+  saveUsage('monthlyUsage', prop, content);
+
 const saveUsageRecord = async (type, record) => {
   if (!jsonDb.data[type]) {
     throw new Error(`Usage type ${type} is not valid`);
@@ -63,11 +84,11 @@ const saveUsageRecord = async (type, record) => {
   logger.info({ id }, `Saved ${type} record`);
 };
 
-export const saveHourlyUsage = async (record) =>
+export const saveHourlyUsageRecord = async (record) =>
   saveUsageRecord('hourlyUsage', record);
 
-export const saveDailyUsage = async (record) =>
+export const saveDailyUsageRecord = async (record) =>
   saveUsageRecord('dailyUsage', record);
 
-export const saveMonthlyUsage = async (record) =>
+export const saveMonthlyUsageRecord = async (record) =>
   saveUsageRecord('monthlyUsage', record);
